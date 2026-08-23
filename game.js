@@ -36,10 +36,13 @@ const state = {
   cafesRestantes: 2,        // pausas para el café por día
   reloj: null,              // reloj en tiempo real de la jornada
   finalizandoDia: false,    // evita disparar finDia dos veces
+  comidaHecha: false,       // pausa de comida obligatoria ya consumida hoy
 };
 
 // El tiempo corre solo: cada segundo real avanza estos minutos de juego.
 const RELOJ_MIN_POR_TICK = 2;
+// Pausa de comida obligatoria de 1 hora al llegar a las 13:15.
+const HORA_COMIDA = 13 * 60 + 15;
 
 // ---------- Utilidades de tiempo ----------
 function horaTexto(min) {
@@ -192,6 +195,7 @@ function tickReloj() {
   if (state.gameOver || state.enModal || !$("#juego").classList.contains("activa")) return;
   state.hora += RELOJ_MIN_POR_TICK;
   actualizarHUD();
+  comprobarComida();
   comprobarFinJornada();
 }
 
@@ -199,6 +203,18 @@ function comprobarFinJornada() {
   if (state.hora >= state.finJornada && !state.finalizandoDia && !state.gameOver) {
     state.finalizandoDia = true;
     finDia();
+  }
+}
+
+// Pausa de comida obligatoria: al cruzar las 13:15 saltan 60 min y baja el hambre.
+function comprobarComida() {
+  if (!state.comidaHecha && state.hora >= HORA_COMIDA && !state.gameOver) {
+    state.comidaHecha = true;
+    state.hora = Math.max(state.hora, HORA_COMIDA + 60); // comes de 13:15 a 14:15
+    state.hambre = Math.max(0, state.hambre - 45);
+    state.estres = Math.max(0, state.estres - 6);
+    feedback("🍝 Pausa de comida obligatoria (13:15–14:15). Hambre -45.", "ok");
+    actualizarHUD();
   }
 }
 
@@ -238,6 +254,7 @@ function empezarDia() {
   state.cafesRestantes = 2;
   state.colaUrgente = null;
   state.finalizandoDia = false;
+  state.comidaHecha = false;
   state.reglasActivas = REGLAS_PROGRESIVAS.filter((r) => r.dia <= state.dia);
   renderWhatsapp();
 }
@@ -677,6 +694,7 @@ function avanzarTiempo(min) {
     feedback(`Francesco te interrumpe: "${txt}"`, "malo");
   }
   actualizarHUD();
+  comprobarComida();
   comprobarFinJornada();
 }
 
