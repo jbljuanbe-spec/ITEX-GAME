@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICEX Milán — El Simulador de Becarios</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- MENÚ -->
+<section id="menu" class="screen activa">
+  <div class="menu-box">
+    <h1 class="titulo">ICEX MILÁN</h1>
+    <h2 class="subtitulo">EL SIMULADOR DE BECARIOS</h2>
+    <p class="tagline">Redacta con IA. Que no te pillen. Sobrevive a Milán.</p>
+    <label class="modo-check"><input type="checkbox" id="modo-infinito"> Modo infinito (sin fin de campaña)</label>
+    <button id="btn-jugar" class="btn-grande">EMPEZAR BECA</button>
+    <p class="creditos">Inspirado en <i>Papers, Please</i> · Oficina Económica y Comercial de España en Milán</p>
+  </div>
+</section>
+
+<!-- SELECCIÓN DE BECARIO -->
+<section id="seleccion" class="screen">
+  <h2 class="pantalla-tit">Elige tu becario</h2>
+  <p class="pantalla-sub">Cada uno reporta a Andrea o Francesco. Encima de todos: Luis, el Jefe Supremo.</p>
+  <div id="lista-becarios" class="grid-becarios"></div>
+</section>
+
+<!-- WHATSAPP INICIO DE DÍA -->
+<section id="whatsapp" class="screen">
+  <div class="wa-phone">
+    <div class="wa-header">
+      <span>Becarios ICEX Milán</span>
+      <span id="wa-dia" class="wa-dia"></span>
+    </div>
+    <div id="wa-mensajes" class="wa-body"></div>
+    <div id="wa-reglas" class="wa-reglas"></div>
+    <button id="btn-wa-entrar" class="btn-grande">Fichar y entrar a la oficina</button>
+  </div>
+</section>
+
+<!-- JUEGO -->
+<section id="juego" class="screen">
+  <div class="hud">
+    <span id="hud-dia">Día 1</span>
+    <span id="hud-hora" class="reloj">09:00</span>
+    <span id="hud-dinero">0€</span>
+    <span id="hud-rep">Rep 50</span>
+    <span id="hud-strikes">⚠ 0/3</span>
+    <span class="barra-wrap">Hambre<span class="barra-bg"><i id="barra-hambre" class="barra"></i></span></span>
+    <span class="barra-wrap">Estrés<span class="barra-bg"><i id="barra-estres" class="barra"></i></span></span>
+    <button id="btn-cafe" class="btn-cafe" title="Baja estrés y hambre, pero gasta tiempo. Usos limitados.">☕ Café</button>
+  </div>
+
+  <div class="escritorio">
+    <!-- Columna izquierda: post-it, reglas, foto retro -->
+    <div class="col-izq">
+      <div id="postit" class="postit"></div>
+      <div class="reglas-box">
+        <div class="reglas-tit">Reglas activas</div>
+        <div id="reglas-panel"></div>
+      </div>
+      <div class="marco-foto">
+        <img id="foto-escritorio" class="foto-retro grande" alt="becario">
+        <div id="nombre-escritorio" class="placa-nombre"></div>
+        <div id="jefe-escritorio" class="placa-jefe"></div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: monitor con pestañas (Trabajo / Skyscanner) -->
+    <div class="col-der">
+      <div class="monitor">
+        <div class="tabs">
+          <button id="tab-trabajo" class="tab activa">📄 Documento — Word 2003</button>
+          <button id="tab-skyscanner" class="tab">✈ Skyscanner</button>
+          <span class="tabs-hint">Tab para cambiar</span>
+        </div>
+        <div id="panel-trabajo" class="panel">
+          <div id="documento" class="documento"></div>
+        </div>
+        <div id="panel-skyscanner" class="panel" style="display:none"></div>
+      </div>
+
+      <button id="btn-generar" class="btn-generar">⚙ Generar con IA</button>
+      <div id="acciones-doc" class="acciones" style="display:none">
+        <button id="btn-filtro" class="btn-tool" title="Usos limitados. Solo huele los tics de IA.">🔍 Filtro anti-IA</button>
+        <button id="btn-editar" class="btn-tool">✂ Editar (borrar marcadas)</button>
+        <button id="btn-rehacer" class="btn-rehacer">↻ Rehacer</button>
+        <button id="btn-enviar" class="btn-enviar">✉ Enviar a revisión</button>
+      </div>
+      <p class="ayuda">Marca las frases con gazapos de IA, discrepancias o fuentes falsas. El jefe puede preguntarte de dónde sale un dato.</p>
+    </div>
+  </div>
+
+  <div id="aviso-jefe" class="aviso-jefe"></div>
+  <div id="feedback" class="feedback"></div>
+</section>
+
+<!-- MODAL: pregunta de fuente -->
+<div id="modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 id="modal-titulo"></h3>
+    <div id="modal-cuerpo"></div>
+    <div id="modal-opciones" class="modal-opciones"></div>
+  </div>
+</div>
+
+<!-- RESUMEN DE DÍA -->
+<section id="resumen" class="screen">
+  <div class="panel-centro">
+    <h2 id="res-titulo"></h2>
+    <div id="res-cuerpo" class="res-cuerpo"></div>
+    <button id="btn-siguiente-dia" class="btn-grande">Siguiente día ▸</button>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section id="final" class="screen">
+  <div class="panel-centro">
+    <h2 id="final-tit" class="final-tit"></h2>
+    <div id="final-cuerpo"></div>
+    <div class="final-botones">
+      <button id="btn-reiniciar" class="btn-grande">Jugar otra vez</button>
+      <button id="btn-volver-menu" class="btn-sec">Menú principal</button>
+    </div>
+  </div>
+</section>
+
+<script src="data.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

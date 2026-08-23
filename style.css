@@ -1,0 +1,219 @@
+/* ICEX Milán — El Simulador de Becarios. Estética oficina años 2000, tono melancólico. */
+:root{
+  --bg:#20242b; --panel:#2b303a; --panel2:#343a46; --texto:#dfe3ea;
+  --tenue:#9aa2b0; --acento:#c8912f; --ok:#5a8f4d; --malo:#b23b3b; --regular:#c8912f;
+  --madera:#5a4632; --papel:#efe7d2;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:"Segoe UI",Tahoma,system-ui,sans-serif;
+  background:radial-gradient(circle at 50% -10%, #2c323d, var(--bg)); color:var(--texto);
+  min-height:100vh;
+}
+.screen{display:none; min-height:100vh; padding:20px}
+.screen.activa{display:block}
+
+/* ---------- Menú ---------- */
+#menu{display:none; place-items:center}
+#menu.activa{display:grid}
+.menu-box{max-width:560px; text-align:center; padding:40px 30px; background:var(--panel);
+  border:1px solid #3d4452; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.titulo{font-size:52px; letter-spacing:6px; margin:0; color:#e6b455;
+  text-shadow:2px 2px 0 #7a5a20}
+.subtitulo{font-size:16px; letter-spacing:5px; color:var(--tenue); margin:6px 0 18px}
+.tagline{color:var(--texto); font-style:italic; margin-bottom:22px}
+.modo-check{display:block; color:var(--tenue); margin-bottom:20px; font-size:14px; cursor:pointer}
+.creditos{margin-top:24px; font-size:11px; color:#6b7280}
+
+.btn-grande{background:var(--acento); color:#1a1a1a; border:none; padding:14px 30px;
+  font-size:17px; font-weight:700; letter-spacing:1px; border-radius:8px; cursor:pointer;
+  box-shadow:0 4px 0 #8a621f; transition:transform .05s}
+.btn-grande:active{transform:translateY(3px); box-shadow:0 1px 0 #8a621f}
+.btn-sec{background:transparent; color:var(--tenue); border:1px solid #4a5160;
+  padding:12px 22px; border-radius:8px; cursor:pointer; font-size:14px}
+
+/* ---------- Selección ---------- */
+.pantalla-tit{text-align:center; font-size:28px; letter-spacing:2px; margin:10px 0 4px}
+.pantalla-sub{text-align:center; color:var(--tenue); margin:0 0 24px; font-size:14px}
+.grid-becarios{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:18px; max-width:820px; margin:0 auto}
+.becario-card{background:var(--panel); border:1px solid #3d4452; border-radius:10px;
+  padding:14px; text-align:center; cursor:pointer; transition:transform .1s, border-color .1s}
+.becario-card:hover{transform:translateY(-4px); border-color:var(--acento)}
+.foto-marco{width:100%; aspect-ratio:1; overflow:hidden; border-radius:6px;
+  border:3px solid var(--madera); background:#111}
+.becario-nombre{margin-top:10px; font-weight:700; letter-spacing:1px}
+.becario-jefe{font-size:12px; color:var(--tenue)}
+
+/* Filtro RETRO + MELANCÓLICO para las fotos de becarios */
+.foto-retro{width:100%; height:100%; object-fit:cover; display:block;
+  filter:grayscale(.55) sepia(.35) contrast(.92) brightness(.82) saturate(.6);
+  mix-blend-mode:luminosity; opacity:.92}
+.foto-marco::after, .marco-foto::after{content:""; position:absolute; inset:0;
+  background:radial-gradient(circle, transparent 40%, rgba(20,15,10,.55) 100%);
+  pointer-events:none}
+.foto-marco, .marco-foto{position:relative}
+
+/* ---------- WhatsApp ---------- */
+#whatsapp{display:none; place-items:center}
+#whatsapp.activa{display:grid}
+.wa-phone{width:min(420px,94vw); background:#0b141a; border-radius:18px; overflow:hidden;
+  border:8px solid #05080b; box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.wa-header{background:#1f2c33; padding:14px 16px; font-weight:700; display:flex;
+  justify-content:space-between; align-items:center; border-bottom:1px solid #05080b}
+.wa-dia{font-size:12px; color:#8aa}
+.wa-body{padding:16px; min-height:180px; background:
+  linear-gradient(#0b141a,#0b141a)}
+.wa-msg{background:#202c33; padding:8px 12px; border-radius:8px; margin-bottom:10px;
+  max-width:85%}
+.wa-msg.propio{background:#005c4b; margin-left:auto}
+.wa-autor{display:block; font-size:11px; color:#53bdeb; font-weight:700}
+.wa-msg.propio .wa-autor{color:#a7f3d0}
+.wa-texto{font-size:14px}
+.wa-reglas{background:#111b21; padding:12px 16px; border-top:1px solid #05080b}
+.wa-regla-tit{color:var(--acento); font-size:13px; font-weight:700; margin-bottom:6px}
+.wa-regla{font-size:13px; color:#d3ddd7}
+.wa-phone .btn-grande{width:100%; border-radius:0; box-shadow:none; padding:16px}
+
+/* ---------- HUD ---------- */
+.hud{display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel);
+  padding:10px 16px; border-radius:10px; margin-bottom:16px; font-size:14px; font-weight:600}
+.reloj{background:#111; color:#6fdc6f; padding:2px 10px; border-radius:5px; font-family:monospace}
+.reloj.tarde{color:#e6b455}
+.reloj.extra{color:#ff6b6b; animation:parpadeo 1s infinite}
+@keyframes parpadeo{50%{opacity:.4}}
+.barra-wrap{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--tenue)}
+.barra-bg{display:inline-block; width:90px; height:10px; background:#1a1d24; border-radius:5px; overflow:hidden}
+.barra{display:block; height:100%; width:10%; background:var(--ok); transition:width .3s}
+.btn-cafe{margin-left:auto; background:#5a4632; color:#f0e6d2; border:1px solid #7a5a2a;
+  padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600}
+.btn-cafe:hover:not(:disabled){border-color:var(--acento)}
+.btn-cafe:disabled{opacity:.45; cursor:not-allowed}
+
+/* ---------- Escritorio ---------- */
+.escritorio{display:grid; grid-template-columns:300px 1fr; gap:20px; max-width:1100px; margin:0 auto}
+.col-izq{display:flex; flex-direction:column; gap:16px}
+
+.postit{background:#f4e04d; color:#2b2b1a; padding:16px; border-radius:2px;
+  box-shadow:3px 5px 12px rgba(0,0,0,.45); transform:rotate(-1.5deg);
+  font-family:"Comic Sans MS","Segoe Print",cursive; line-height:1.5}
+.postit-tit{font-weight:700; border-bottom:1px dashed #b3a52f; padding-bottom:5px; margin-bottom:8px}
+.postit-linea{font-size:14px} .postit-linea.small{margin-top:8px; font-size:12px; color:#5c561f}
+
+.reglas-box{background:var(--panel); border:1px solid #3d4452; border-radius:8px; padding:12px}
+.reglas-tit{color:var(--acento); font-size:13px; font-weight:700; margin-bottom:6px}
+.regla-item{font-size:12px; color:#c3cad6; margin-bottom:4px}
+
+.marco-foto{background:var(--madera); padding:10px; border-radius:6px; text-align:center;
+  box-shadow:inset 0 0 12px rgba(0,0,0,.5)}
+.foto-retro.grande{border:2px solid #2a2015}
+.placa-nombre{margin-top:8px; background:#c9b892; color:#2b2416; font-weight:700;
+  letter-spacing:1px; padding:3px; border-radius:2px; font-size:13px}
+.placa-jefe{font-size:11px; color:#e3d6b8; margin-top:3px}
+
+/* Monitor / documento */
+.col-der{display:flex; flex-direction:column; gap:12px}
+.monitor{background:#0d1b0d; border:10px solid #cbc6b8; border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5)}
+/* Pestañas del monitor */
+.tabs{display:flex; align-items:center; gap:2px; background:#c3bfb0; padding:4px 4px 0}
+.tab{background:#9fa9b5; color:#20201a; border:none; padding:6px 12px; font-size:12px;
+  font-weight:600; border-radius:4px 4px 0 0; cursor:pointer; opacity:.75}
+.tab.activa{opacity:1; background:#1e5bb8; color:#fff}
+#tab-skyscanner.activa{background:#0770e3}
+.tabs-hint{margin-left:auto; font-size:11px; color:#5c5848; padding-right:6px}
+.panel{background:#0d1b0d}
+.documento{background:var(--papel); color:#20201a; min-height:320px; max-height:52vh;
+  overflow:auto; padding:22px 26px; font-family:"Times New Roman",Georgia,serif;
+  line-height:1.7; font-size:16px}
+.doc-vacio{color:#6b6752; text-align:center; padding:60px 10px; font-style:italic}
+.doc-par{margin:0 0 12px; padding:3px 6px; border-radius:3px; cursor:pointer;
+  transition:background .1s}
+.doc-par:hover{background:#e2d8bd}
+.doc-par.marcado{background:#ffd7d7; box-shadow:inset 3px 0 0 var(--malo);
+  text-decoration:line-through; text-decoration-color:#b23b3b}
+.doc-par.sospechoso{background:#fff3b0; animation:pulso 1.2s ease}
+@keyframes pulso{0%,100%{background:#fff3b0}50%{background:#ffe066}}
+
+.btn-generar{align-self:flex-start; background:#4a5db8; color:#fff; border:none;
+  padding:12px 22px; font-size:15px; font-weight:700; border-radius:8px; cursor:pointer;
+  box-shadow:0 4px 0 #33408a}
+.btn-generar:active{transform:translateY(3px); box-shadow:0 1px 0 #33408a}
+.acciones{display:flex; gap:10px; flex-wrap:wrap}
+.btn-tool{background:var(--panel2); color:var(--texto); border:1px solid #4a5160;
+  padding:11px 16px; border-radius:8px; cursor:pointer; font-size:14px}
+.btn-tool:hover{border-color:var(--acento)}
+.btn-rehacer{background:#7a5a2a; color:#fff; border:none; padding:11px 18px;
+  border-radius:8px; cursor:pointer; font-weight:600}
+.btn-enviar{background:var(--ok); color:#fff; border:none; padding:11px 22px;
+  border-radius:8px; cursor:pointer; font-weight:700; margin-left:auto}
+.ayuda{font-size:12px; color:var(--tenue); margin:0}
+
+/* Feedback flotante */
+.feedback{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(120%);
+  background:var(--panel); border:1px solid #4a5160; padding:14px 22px; border-radius:10px;
+  max-width:90vw; text-align:center; font-weight:600; transition:transform .3s; z-index:50;
+  box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.feedback.visible{transform:translateX(-50%) translateY(0)}
+.feedback.ok{border-color:var(--ok); color:#a7e59a}
+.feedback.malo{border-color:var(--malo); color:#ff9e9e}
+.feedback.regular{border-color:var(--regular); color:#ffd88a}
+
+/* Resumen / final */
+.panel-centro{max-width:520px; margin:6vh auto; background:var(--panel);
+  border:1px solid #3d4452; border-radius:14px; padding:30px; text-align:center}
+.res-cuerpo{margin:20px 0; text-align:left}
+.res-linea{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #3a404c}
+.res-linea.ingreso b{color:#8fe07f} .res-linea.gasto b{color:#ff9e9e}
+.res-linea.total{border-top:2px solid #4a5160; margin-top:6px; font-size:18px}
+.final-tit{font-size:34px; letter-spacing:3px; margin-top:0}
+.final-tit.victoria{color:#8fe07f} .final-tit.derrota{color:#ff8080}
+.final-stats{margin:18px 0; display:grid; gap:8px; color:var(--tenue)}
+.final-stats b{color:var(--texto)}
+.final-botones{display:flex; gap:12px; justify-content:center; margin-top:10px}
+
+/* Skyscanner (pestaña de escaqueo) */
+.sky-barra{background:#0770e3; color:#fff; font-weight:700; padding:8px 12px; font-size:14px}
+.sky-body{background:#f2f6fb; color:#1a2733; padding:16px; min-height:320px; max-height:52vh; overflow:auto;
+  font-family:"Segoe UI",system-ui,sans-serif}
+.sky-tit{font-size:18px; font-weight:700; margin-bottom:14px; color:#05203a}
+.sky-fila{display:grid; grid-template-columns:1fr auto auto auto; gap:10px; align-items:center;
+  background:#fff; border:1px solid #d7e2ee; border-radius:8px; padding:10px 12px; margin-bottom:8px}
+.sky-hora{color:#5a6b7b; font-size:13px}
+.sky-precio{font-weight:700; color:#0770e3}
+.sky-btn{background:#0770e3; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer}
+.sky-nota{margin-top:14px; font-size:12px; color:#5a6b7b; font-style:italic}
+
+/* Aviso "jefe se acerca" */
+.aviso-jefe{position:fixed; top:70px; left:50%; transform:translateX(-50%) translateY(-180%);
+  background:#b23b3b; color:#fff; padding:12px 24px; border-radius:10px; font-size:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); transition:transform .25s, opacity .25s; z-index:60;
+  opacity:0; visibility:hidden; pointer-events:none}
+.aviso-jefe.activa{transform:translateX(-50%) translateY(0); opacity:1; visibility:visible;
+  animation:parpadeo .8s infinite}
+
+/* Modal de pregunta de fuente */
+.modal-overlay{position:fixed; inset:0; background:rgba(10,12,16,.72); display:none;
+  place-items:center; z-index:70; padding:20px}
+.modal-overlay.activa{display:grid}
+.modal-box{max-width:520px; background:var(--panel); border:1px solid #4a5160; border-radius:14px;
+  padding:26px; box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal-box h3{margin:0 0 12px; color:#e6b455}
+.modal-box i{color:#dfe3ea}
+.modal-nota{font-size:13px; color:var(--tenue); font-style:italic}
+.modal-opciones{display:flex; flex-direction:column; gap:8px; margin-top:16px}
+.modal-op{background:var(--panel2); color:var(--texto); border:1px solid #4a5160; text-align:left;
+  padding:12px 14px; border-radius:8px; cursor:pointer; font-size:14px}
+.modal-op:hover{border-color:var(--acento); background:#3d4452}
+
+/* Post-it urgente de Francesco */
+.postit-linea.urgente{background:#e34b4b; color:#fff; padding:6px 8px; border-radius:3px;
+  font-weight:700; margin-bottom:6px; transform:rotate(.5deg)}
+
+/* Responsive */
+@media(max-width:800px){
+  .escritorio{grid-template-columns:1fr}
+  .btn-enviar{margin-left:0}
+  .sky-fila{grid-template-columns:1fr auto}
+  .sky-hora{display:none}
+}
