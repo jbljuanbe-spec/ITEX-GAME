@@ -33,7 +33,12 @@ const state = {
   enModal: false,           // hay un popup bloqueante abierto
   colaUrgente: null,        // tarea urgente de Francesco pendiente de meterse
   cafesRestantes: 2,        // pausas para el café por día
+  reloj: null,              // reloj en tiempo real de la jornada
+  finalizandoDia: false,    // evita disparar finDia dos veces
 };
+
+// El tiempo corre solo: cada segundo real avanza estos minutos de juego.
+const RELOJ_MIN_POR_TICK = 2;
 
 // ---------- Utilidades de tiempo ----------
 function horaTexto(min) {
@@ -175,7 +180,25 @@ function filtroDetecta(par) {
 function mostrar(pantalla) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("activa"));
   $("#" + pantalla).classList.add("activa");
-  if (pantalla !== "juego") pararJefe();
+  if (pantalla !== "juego") { pararJefe(); pararReloj(); }
+}
+
+// ---------- Reloj en tiempo real ----------
+function iniciarReloj() { clearInterval(state.reloj); state.reloj = setInterval(tickReloj, 1000); }
+function pararReloj() { clearInterval(state.reloj); }
+
+function tickReloj() {
+  if (state.gameOver || state.enModal || !$("#juego").classList.contains("activa")) return;
+  state.hora += RELOJ_MIN_POR_TICK;
+  actualizarHUD();
+  comprobarFinJornada();
+}
+
+function comprobarFinJornada() {
+  if (state.hora >= state.finJornada && !state.finalizandoDia && !state.gameOver) {
+    state.finalizandoDia = true;
+    finDia();
+  }
 }
 
 function renderSeleccion() {
@@ -213,6 +236,7 @@ function empezarDia() {
   state.filtrosRestantes = 2;
   state.cafesRestantes = 2;
   state.colaUrgente = null;
+  state.finalizandoDia = false;
   state.reglasActivas = REGLAS_PROGRESIVAS.filter((r) => r.dia <= state.dia);
   renderWhatsapp();
 }
@@ -251,11 +275,12 @@ function entrarOficina() {
   actualizarHUD();
   nuevaTarea();
   programarJefe();
+  iniciarReloj();
 }
 
 // ---------- Tarea en pantalla ----------
 function nuevaTarea() {
-  if (state.hora >= state.finJornada) { finDia(); return; }
+  if (state.hora >= state.finJornada) { comprobarFinJornada(); return; }
   // ¿Hay urgencia de Francesco encolada?
   if (state.colaUrgente) { const u = state.colaUrgente; state.colaUrgente = null; state.tarea = u; }
   else state.tarea = generarTarea();
@@ -296,8 +321,8 @@ function renderPostit() {
 function generarConIA() {
   const t = state.tarea;
   pintarDocumento();
-  t.minutos = entero(12, 20);
-  avanzarTiempo(t.minutos);
+  // El tiempo ya corre solo; leer con calma cuesta tiempo real. Generar es solo un pequeño arranque.
+  avanzarTiempo(3);
   $("#btn-generar").style.display = "none";
   $("#acciones-doc").style.display = "flex";
   $("#btn-filtro").textContent = `🔍 Filtro anti-IA (${state.filtrosRestantes})`;
@@ -452,14 +477,14 @@ function pausaCafe() {
   if (!$("#juego").classList.contains("activa") || state.enModal || state.gameOver) return;
   if (state.cafesRestantes <= 0) { feedback("Ya has bajado dos veces a la máquina. Como sigas, se nota.", "regular"); return; }
   state.cafesRestantes--;
-  avanzarTiempo(10);
+  avanzarTiempo(30);
   state.estres = Math.max(0, state.estres - 12);
   state.hambre = Math.max(0, state.hambre - 8);
   actualizarCafe();
   feedback(rnd([
-    "Café con el resto de becarios en la máquina. Estrés -12.",
-    "Café y cornetto. Vuelves algo más entero. Estrés -12, hambre -8.",
-    "Cinco minutos de cotilleo de oficina. Recargado.",
+    "Café con el resto de becarios en la máquina. Estrés -12 (−30 min).",
+    "Café y cornetto. Vuelves más entero, pero se han ido 30 minutos.",
+    "Media hora de cotilleo de oficina. Recargado, pero el reloj corre.",
   ]), "ok");
 }
 
@@ -508,16 +533,18 @@ function programarJefe() {
 
 function dispararJefe() {
   if (state.gameOver || !$("#juego").classList.contains("activa") || state.enModal) { programarJefe(); return; }
+  // El jefe solo es un problema si estás escaqueado en otra ventana. Si estás en el
+  // informe, pasa de largo y no pasa nada (nada de darle a Tab estando ya trabajando).
+  if (state.pestana !== "skyscanner") { programarJefe(); return; }
   state.jefeViene = true;
   const jefe = JEFES[chance(0.2) ? "luis" : state.becario.jefe];
   state.jefeActual = jefe;
   const av = $("#aviso-jefe");
-  av.innerHTML = `👀 <b>${jefe.nombre}</b> se acerca a tu mesa — vuelve al trabajo (<b>Tab</b>)`;
+  av.innerHTML = `👀 <b>${jefe.nombre}</b> viene hacia tu mesa y estás en Skyscanner — vuelve al trabajo (<b>Tab</b>)`;
   av.classList.add("activa");
-  // Ventana de reacción.
+  // Ventana de reacción: si sigues en Skyscanner al acabar, te pilla.
   state.jefeVentana = setTimeout(() => {
-    if (state.pestana === "skyscanner") resolverJefe(false);
-    else resolverJefe(true);
+    resolverJefe(state.pestana !== "skyscanner");
   }, 3500);
 }
 
@@ -568,10 +595,12 @@ function avanzarTiempo(min) {
     feedback(`Francesco te interrumpe: "${txt}"`, "malo");
   }
   actualizarHUD();
+  comprobarFinJornada();
 }
 
 function finDia() {
   pararJefe();
+  pararReloj();
   const e = ECONOMIA;
   const ingresoDia = Math.round(e.becaMensual / e.diasCampania);
   const gastoDia = Math.round(e.alquilerMensual / e.diasCampania) + e.transporteMensual / e.diasCampania + e.comidaDiaria;
