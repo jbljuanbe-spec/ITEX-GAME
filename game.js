@@ -24,7 +24,8 @@ const state = {
   reglasActivas: [],
   gameOver: false,
   // v2
-  pestana: "trabajo",       // "trabajo" | "skyscanner"
+  pestana: "trabajo",       // "trabajo" | "skyscanner" | "tictactoe"
+  ultimaOcio: "skyscanner", // última pestaña de escaqueo, para el toggle con Tab
   filtrosRestantes: 2,      // usos de filtro anti-IA por día
   jefeTimeout: null,        // timer del "jefe se acerca"
   jefeVentana: null,        // timer de la ventana de reacción
@@ -493,17 +494,26 @@ function actualizarCafe() {
   if (b) { b.textContent = `☕ Café (${state.cafesRestantes})`; b.disabled = state.cafesRestantes <= 0; }
 }
 
-// ---------- Pestaña Skyscanner / escaqueo ----------
+// ---------- Pestañas / escaqueo ----------
+// Pestañas de escaqueo (todo lo que no sea "trabajo"): baja estrés, el tiempo corre igual
+// y el jefe te puede pillar.
+const PANELES = ["trabajo", "skyscanner", "tictactoe"];
+
 function cambiarPestana(cual) {
   state.pestana = cual;
-  $("#panel-trabajo").style.display = cual === "trabajo" ? "block" : "none";
-  $("#panel-skyscanner").style.display = cual === "skyscanner" ? "block" : "none";
-  $("#tab-trabajo").classList.toggle("activa", cual === "trabajo");
-  $("#tab-skyscanner").classList.toggle("activa", cual === "skyscanner");
-  // Escaquearse baja el estrés poco a poco; volver al trabajo lo corta.
+  PANELES.forEach((p) => {
+    $("#panel-" + p).style.display = (p === cual) ? "block" : "none";
+    $("#tab-" + p).classList.toggle("activa", p === cual);
+  });
+  if (cual !== "trabajo") state.ultimaOcio = cual; // para el toggle rápido con Tab
+
+  // Pintado perezoso de cada panel de escaqueo.
+  if (cual === "skyscanner" && !$("#panel-skyscanner").dataset.pintado) pintarSkyscanner();
+  if (cual === "tictactoe" && !$("#panel-tictactoe").dataset.pintado) pintarTicTacToe();
+
+  // Escaquearse (cualquier pestaña que no sea trabajo) baja el estrés poco a poco.
   clearInterval(state.relaxInterval);
-  if (cual === "skyscanner") {
-    if (!$("#panel-skyscanner").dataset.pintado) pintarSkyscanner();
+  if (cual !== "trabajo") {
     state.relaxInterval = setInterval(() => { state.estres = Math.max(0, state.estres - 1); actualizarHUD(); }, 1500);
   }
   // Si el jefe estaba viniendo y vuelves a tiempo al trabajo, te salvas.
@@ -525,6 +535,76 @@ function pintarSkyscanner() {
   cont.querySelectorAll(".sky-btn").forEach((b) => b.onclick = () => feedback("Vuelo guardado en tus sueños. Sigues en Milán.", "regular"));
 }
 
+// ---------- 3 en raya (escaqueo jugable) ----------
+const ttt = { tablero: Array(9).fill(""), fin: false };
+
+function pintarTicTacToe() {
+  const cont = $("#panel-tictactoe");
+  cont.dataset.pintado = "1";
+  cont.innerHTML = `
+    <div class="ttt-barra">⭕ Tres en raya — minijuego de oficina</div>
+    <div class="ttt-body">
+      <div class="ttt-estado" id="ttt-estado">Tu turno (X)</div>
+      <div class="ttt-grid" id="ttt-grid"></div>
+      <button class="ttt-reset" id="ttt-reset">Nueva partida</button>
+      <div class="ttt-nota">Finge que trabajas mientras juegas. El tiempo corre igual y, si un jefe se acerca, vuelve con <b>Tab</b>.</div>
+    </div>`;
+  $("#ttt-reset").onclick = tttReiniciar;
+  tttReiniciar();
+}
+
+function tttReiniciar() {
+  ttt.tablero = Array(9).fill("");
+  ttt.fin = false;
+  $("#ttt-estado").textContent = "Tu turno (X)";
+  tttRender();
+}
+
+function tttRender() {
+  const grid = $("#ttt-grid");
+  grid.innerHTML = "";
+  ttt.tablero.forEach((v, i) => {
+    const c = document.createElement("button");
+    c.className = "ttt-celda" + (v ? " puesta" : "");
+    c.textContent = v;
+    c.onclick = () => tttJugada(i);
+    grid.appendChild(c);
+  });
+}
+
+function tttJugada(i) {
+  if (ttt.fin || ttt.tablero[i]) return;
+  ttt.tablero[i] = "X";
+  if (tttResuelve()) return;
+  // CPU: elige centro, si no una casilla al azar.
+  const libres = ttt.tablero.map((v, idx) => v ? -1 : idx).filter((x) => x >= 0);
+  if (libres.length) {
+    const jugada = ttt.tablero[4] === "" ? 4 : rnd(libres);
+    ttt.tablero[jugada] = "O";
+  }
+  tttResuelve();
+}
+
+function tttResuelve() {
+  const L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let ganador = null;
+  for (const [a, b, c] of L) {
+    if (ttt.tablero[a] && ttt.tablero[a] === ttt.tablero[b] && ttt.tablero[a] === ttt.tablero[c]) ganador = ttt.tablero[a];
+  }
+  const lleno = ttt.tablero.every((v) => v);
+  if (ganador) {
+    ttt.fin = true;
+    $("#ttt-estado").textContent = ganador === "X" ? "¡Ganas! (pero deberías estar trabajando)" : "Pierdes contra el propio ordenador de la oficina.";
+  } else if (lleno) {
+    ttt.fin = true;
+    $("#ttt-estado").textContent = "Empate. Como tu carrera aquí.";
+  } else {
+    $("#ttt-estado").textContent = "Tu turno (X)";
+  }
+  tttRender();
+  return ttt.fin;
+}
+
 // ---------- Jefe se acerca ----------
 function programarJefe() {
   pararJefe();
@@ -535,16 +615,17 @@ function dispararJefe() {
   if (state.gameOver || !$("#juego").classList.contains("activa") || state.enModal) { programarJefe(); return; }
   // El jefe solo es un problema si estás escaqueado en otra ventana. Si estás en el
   // informe, pasa de largo y no pasa nada (nada de darle a Tab estando ya trabajando).
-  if (state.pestana !== "skyscanner") { programarJefe(); return; }
+  if (state.pestana === "trabajo") { programarJefe(); return; }
   state.jefeViene = true;
   const jefe = JEFES[chance(0.2) ? "luis" : state.becario.jefe];
   state.jefeActual = jefe;
+  const donde = state.pestana === "tictactoe" ? "jugando al 3 en raya" : "en Skyscanner";
   const av = $("#aviso-jefe");
-  av.innerHTML = `👀 <b>${jefe.nombre}</b> viene hacia tu mesa y estás en Skyscanner — vuelve al trabajo (<b>Tab</b>)`;
+  av.innerHTML = `👀 <b>${jefe.nombre}</b> viene hacia tu mesa y estás ${donde} — vuelve al trabajo (<b>Tab</b>)`;
   av.classList.add("activa");
-  // Ventana de reacción: si sigues en Skyscanner al acabar, te pilla.
+  // Ventana de reacción: si sigues escaqueado al acabar, te pilla.
   state.jefeVentana = setTimeout(() => {
-    resolverJefe(state.pestana !== "skyscanner");
+    resolverJefe(state.pestana === "trabajo");
   }, 3500);
 }
 
@@ -558,8 +639,9 @@ function resolverJefe(aSalvo) {
     state.reputacion = Math.max(0, state.reputacion - (esLuis ? 18 : 10));
     state.estres = Math.min(100, state.estres + 15);
     if (esLuis) state.strikes++;
+    const donde = state.pestana === "tictactoe" ? "jugando al 3 en raya" : "en Skyscanner";
     cambiarPestana("trabajo");
-    feedback(`${jefe.nombre} te ha pillado en Skyscanner. ${esLuis ? "STRIKE." : "Bronca."} (rep -${esLuis ? 18 : 10})`, "malo");
+    feedback(`${jefe.nombre} te ha pillado ${donde}. ${esLuis ? "STRIKE." : "Bronca."} (rep -${esLuis ? 18 : 10})`, "malo");
     chequearGameOver();
   }
   actualizarHUD();
@@ -717,12 +799,13 @@ window.addEventListener("DOMContentLoaded", () => {
   $("#btn-volver-menu").onclick = () => location.reload();
   $("#tab-trabajo").onclick = () => cambiarPestana("trabajo");
   $("#tab-skyscanner").onclick = () => cambiarPestana("skyscanner");
+  $("#tab-tictactoe").onclick = () => cambiarPestana("tictactoe");
   $("#btn-cafe").onclick = pausaCafe;
-  // Tecla Tab: alterna entre trabajo y escaqueo, como un alt-tab de oficina.
+  // Tecla Tab: alterna entre trabajo y la última pestaña de escaqueo (alt-tab de oficina).
   document.addEventListener("keydown", (e) => {
     if (e.key === "Tab" && $("#juego").classList.contains("activa") && !state.enModal) {
       e.preventDefault();
-      cambiarPestana(state.pestana === "trabajo" ? "skyscanner" : "trabajo");
+      cambiarPestana(state.pestana === "trabajo" ? state.ultimaOcio : "trabajo");
     }
   });
 });
