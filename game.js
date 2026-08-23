@@ -18,7 +18,7 @@ const state = {
   estres: 0,
   reputacion: 50,
   enviadosHoy: 0,
-  cuotaDiaria: 4,
+  cuotaDiaria: 6,
   tarea: null,
   marcados: new Set(),
   reglasActivas: [],
@@ -37,6 +37,7 @@ const state = {
   reloj: null,              // reloj en tiempo real de la jornada
   finalizandoDia: false,    // evita disparar finDia dos veces
   comidaHecha: false,       // pausa de comida obligatoria ya consumida hoy
+  avisoTarde: false,        // aviso de las 16:00 por ir corto de cuota
 };
 
 // El tiempo corre solo: cada segundo real avanza estos minutos de juego.
@@ -196,7 +197,17 @@ function tickReloj() {
   state.hora += RELOJ_MIN_POR_TICK;
   actualizarHUD();
   comprobarComida();
+  comprobarAvisoTarde();
   comprobarFinJornada();
+}
+
+// A las 16:00, si vas corto de cuota, aviso para que espabiles.
+function comprobarAvisoTarde() {
+  if (!state.avisoTarde && state.hora >= 16 * 60 && state.enviadosHoy < state.cuotaDiaria && !state.gameOver) {
+    state.avisoTarde = true;
+    const faltan = state.cuotaDiaria - state.enviadosHoy;
+    feedback(`⏰ Son las 16:00 y llevas ${state.enviadosHoy}/${state.cuotaDiaria}. Faltan ${faltan}: como no espabiles, bronca gorda.`, "malo");
+  }
 }
 
 function comprobarFinJornada() {
@@ -255,6 +266,7 @@ function empezarDia() {
   state.colaUrgente = null;
   state.finalizandoDia = false;
   state.comidaHecha = false;
+  state.avisoTarde = false;
   state.reglasActivas = REGLAS_PROGRESIVAS.filter((r) => r.dia <= state.dia);
   renderWhatsapp();
 }
@@ -710,12 +722,27 @@ function finDia() {
 
   state.hambre = Math.min(100, state.hambre + (state.enviadosHoy < state.cuotaDiaria ? 14 : 6));
   if (aperitivo) state.estres = Math.max(0, state.estres - 12);
-  if (state.enviadosHoy < state.cuotaDiaria) state.reputacion = Math.max(0, state.reputacion - 8);
+
+  // Cuota: no llegar cuesta caro. -12 rep por documento que falta. Si te quedas
+  // a la mitad o menos, bronca grande: penalización extra y un strike.
+  const faltan = Math.max(0, state.cuotaDiaria - state.enviadosHoy);
+  let broncaCuota = "";
+  if (faltan > 0) {
+    let pen = faltan * 12;
+    const muyCorto = state.enviadosHoy <= Math.floor(state.cuotaDiaria / 2);
+    if (muyCorto) { pen += 15; state.strikes++; state.estres = Math.min(100, state.estres + 15); }
+    state.reputacion = Math.max(0, state.reputacion - pen);
+    const jefe = JEFES[state.becario.jefe].nombre;
+    broncaCuota = muyCorto
+      ? `<div class="res-linea bronca"><span>🔥 BRONCA GORDA de ${jefe}</span><b>-${pen} rep · STRIKE (solo ${state.enviadosHoy}/${state.cuotaDiaria})</b></div>`
+      : `<div class="res-linea bronca"><span>Cuota sin cumplir (${jefe})</span><b>-${pen} rep (faltan ${faltan})</b></div>`;
+  }
 
   mostrar("resumen");
   $("#res-titulo").textContent = `Fin del día ${state.dia}`;
   $("#res-cuerpo").innerHTML = `
     <div class="res-linea"><span>Informes enviados</span><b>${state.enviadosHoy} / ${state.cuotaDiaria} (cuota)</b></div>
+    ${broncaCuota}
     <div class="res-linea"><span>Salida</span><b>${horaTexto(Math.min(state.hora, 22*60))} ${aperitivo ? "🍸 aperitivo en Navigli" : "😓 horas extra"}</b></div>
     <div class="res-linea ingreso"><span>Beca (prorrateo)</span><b>+${ingresoDia}€</b></div>
     <div class="res-linea gasto"><span>Alquiler + transporte + comida${aperitivo ? " + aperitivo" : ""}</span><b>-${Math.round(gastoDia + aperitivo)}€</b></div>
@@ -779,6 +806,11 @@ function actualizarHUD() {
   $("#hud-hora").textContent = horaTexto(Math.min(state.hora, 22 * 60));
   $("#hud-dinero").textContent = `${state.dinero}€`;
   $("#hud-rep").textContent = `Rep ${state.reputacion}`;
+  const env = $("#hud-envios");
+  if (env) {
+    env.textContent = `📤 ${state.enviadosHoy}/${state.cuotaDiaria}`;
+    env.classList.toggle("corto", state.enviadosHoy < state.cuotaDiaria);
+  }
   $("#hud-strikes").textContent = `⚠ ${state.strikes}/3`;
   setBarra("#barra-hambre", state.hambre);
   setBarra("#barra-estres", state.estres);
