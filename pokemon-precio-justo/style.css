@@ -1,0 +1,152 @@
+* { box-sizing: border-box; }
+
+:root {
+  --rojo: #e3350d;
+  --amarillo: #ffcb05;
+  --azul: #3b4cca;
+  --fondo: #f4f4f4;
+  --texto: #222;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+header {
+  background: var(--rojo);
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+header h1 { margin: 0; font-size: 1.5rem; }
+.subtitle { margin: .25rem 0 0; font-size: .9rem; opacity: .9; }
+
+main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+
+label {
+  display: block;
+  margin-top: .75rem;
+  font-weight: 600;
+  font-size: .9rem;
+}
+
+select, input[type="number"], input[type="text"] {
+  width: 100%;
+  padding: .5rem;
+  margin-top: .25rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+button {
+  width: 100%;
+  padding: .75rem;
+  margin-top: 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--azul);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:active { opacity: .85; }
+
+#card-area {
+  text-align: center;
+}
+
+#card-image {
+  max-width: 100%;
+  max-height: 360px;
+  border-radius: 8px;
+}
+
+#card-meta {
+  margin-top: .5rem;
+  font-size: .9rem;
+  color: #555;
+}
+
+.guess-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .75rem;
+}
+
+.guess-row label {
+  flex: 1;
+  margin: 0;
+}
+
+.guess-row input {
+  flex: 1;
+  margin: 0;
+}
+
+#reveal-area {
+  margin-top: 1rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: .35rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: .95rem;
+}
+
+.result-row.winner {
+  font-weight: 700;
+  color: var(--rojo);
+}
+
+.real-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: .5rem;
+}
+
+#final-ranking .result-row:first-child {
+  font-weight: 700;
+  color: var(--rojo);
+}
+
+#error-box {
+  background: #fff3f3;
+  border: 1px solid #e3350d;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  font-size: .75rem;
+  color: #888;
+  padding: 1rem;
+}
+
+footer a { color: #888; }

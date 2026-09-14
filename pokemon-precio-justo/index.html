@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precio Justo Pokémon</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Precio Justo Pokémon</h1>
+    <p class="subtitle">Adivina el precio de mercado de Cardmarket</p>
+  </header>
+
+  <main>
+    <section id="screen-setup">
+      <h2>Nueva partida</h2>
+
+      <label for="num-players">Jugadores</label>
+      <select id="num-players">
+        <option value="1">1 (solitario)</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+      </select>
+
+      <div id="player-names"></div>
+
+      <label for="num-rounds">Rondas</label>
+      <select id="num-rounds">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+      </select>
+
+      <button id="btn-start">Empezar partida</button>
+    </section>
+
+    <section id="screen-round" hidden>
+      <p id="round-info"></p>
+
+      <div id="card-area">
+        <img id="card-image" alt="Carta Pokémon">
+        <div id="card-meta"></div>
+      </div>
+
+      <div id="guess-form"></div>
+
+      <button id="btn-reveal">Revelar precio</button>
+
+      <div id="reveal-area" hidden></div>
+
+      <button id="btn-next" hidden>Siguiente carta</button>
+    </section>
+
+    <section id="screen-final" hidden>
+      <h2>Resultado final</h2>
+      <div id="final-ranking"></div>
+      <button id="btn-restart">Jugar de nuevo</button>
+    </section>
+
+    <div id="error-box" hidden>
+      <p id="error-msg"></p>
+      <button id="btn-retry">Reintentar</button>
+    </div>
+  </main>
+
+  <footer>
+    <p>Cartas y precios de <a href="https://pokemontcg.io" target="_blank" rel="noopener">pokemontcg.io</a> (datos de Cardmarket).</p>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>

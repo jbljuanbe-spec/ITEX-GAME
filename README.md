@@ -18,3 +18,6 @@ Jugar: https://jbljuanbe-spec.github.io/ITEX-GAME/
 
 ## Estructura
 `index.html`, `style.css`, `game.js`, `data.js`, `img/`. Todo estático, sin dependencias.
+
+## Otros juegos en este repo
+- [Precio Justo Pokémon](pokemon-precio-justo/) — adivina el precio de Cardmarket de una carta Pokémon al azar, 1-4 jugadores.
