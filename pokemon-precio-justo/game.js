@@ -1,5 +1,6 @@
 const API_BASE = 'https://api.pokemontcg.io/v2/cards';
-const PRICE_FILTER = 'cardmarket.prices.averageSellPrice:[0.01 TO *]';
+const BATCH_SIZE = 250; // máximo que admite la API por página
+const REFILL_THRESHOLD = 5; // cuando quedan pocas cartas en cola, se rellena en segundo plano
 
 const state = {
   players: [],
@@ -8,7 +9,10 @@ const state = {
   totalCardCount: null,
   currentCard: null,
   currentPrice: null,
+  cardQueue: [],
 };
+
+let prefetchPromise = null;
 
 const el = (id) => document.getElementById(id);
 
@@ -25,6 +29,7 @@ el('btn-restart').addEventListener('click', restart);
 el('btn-retry').addEventListener('click', loadCard);
 
 renderPlayerNameInputs();
+fetchBatch(); // precarga en segundo plano mientras el jugador rellena la configuración
 
 function renderPlayerNameInputs() {
   const n = Number(el('num-players').value);
@@ -71,25 +76,53 @@ function startRound() {
 
 async function getTotalCount() {
   if (state.totalCardCount) return state.totalCardCount;
-  const res = await fetch(`${API_BASE}?pageSize=1&q=${encodeURIComponent(PRICE_FILTER)}`);
+  const res = await fetch(`${API_BASE}?pageSize=1`);
   if (!res.ok) throw new Error(`API respondió ${res.status}`);
   const data = await res.json();
   state.totalCardCount = data.totalCount;
   return state.totalCardCount;
 }
 
-async function fetchRandomCard() {
-  const total = await getTotalCount();
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const page = 1 + Math.floor(Math.random() * total);
-    const res = await fetch(`${API_BASE}?pageSize=1&page=${page}&q=${encodeURIComponent(PRICE_FILTER)}`);
-    if (!res.ok) continue;
-    const data = await res.json();
-    const card = data.data && data.data[0];
-    const price = card?.cardmarket?.prices?.trendPrice || card?.cardmarket?.prices?.averageSellPrice;
-    if (card && price) return { card, price };
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  throw new Error('No se encontró ninguna carta con precio tras varios intentos');
+  return arr;
+}
+
+// Pide un lote grande de cartas de golpe (en vez de 1 carta por ronda): las
+// páginas profundas de 1 en 1 son muy lentas en esta API, y con 250 cartas
+// de una vez suele bastar para toda la partida.
+function fetchBatch() {
+  if (prefetchPromise) return prefetchPromise; // ya hay una petición en curso: reutilizarla
+  prefetchPromise = (async () => {
+    try {
+      const total = await getTotalCount();
+      const maxPage = Math.max(1, Math.ceil(total / BATCH_SIZE));
+      const page = 1 + Math.floor(Math.random() * maxPage);
+      const res = await fetch(`${API_BASE}?pageSize=${BATCH_SIZE}&page=${page}`);
+      if (!res.ok) throw new Error(`API respondió ${res.status}`);
+      const data = await res.json();
+      const cards = (data.data || [])
+        .map(card => {
+          const price = card?.cardmarket?.prices?.trendPrice || card?.cardmarket?.prices?.averageSellPrice;
+          return price ? { card, price } : null;
+        })
+        .filter(Boolean);
+      state.cardQueue.push(...shuffle(cards));
+    } finally {
+      prefetchPromise = null;
+    }
+  })();
+  return prefetchPromise;
+}
+
+function preloadImages(items) {
+  items.forEach(item => {
+    const img = new Image();
+    img.src = item.card.images.large || item.card.images.small;
+  });
 }
 
 async function loadCard() {
@@ -100,7 +133,14 @@ async function loadCard() {
   el('btn-reveal').disabled = true;
 
   try {
-    const { card, price } = await fetchRandomCard();
+    for (let attempt = 0; state.cardQueue.length === 0 && attempt < 3; attempt++) {
+      await fetchBatch();
+    }
+    if (state.cardQueue.length === 0) {
+      throw new Error('No se encontraron cartas con precio');
+    }
+
+    const { card, price } = state.cardQueue.shift();
     state.currentCard = card;
     state.currentPrice = price;
 
@@ -110,6 +150,11 @@ async function loadCard() {
 
     renderGuessForm();
     el('btn-reveal').disabled = false;
+
+    preloadImages(state.cardQueue.slice(0, 2));
+    if (state.cardQueue.length < REFILL_THRESHOLD) {
+      fetchBatch(); // en segundo plano, no bloquea la ronda actual
+    }
   } catch (err) {
     showError('No se pudo cargar la carta. Comprueba tu conexión e inténtalo de nuevo. ' + err.message);
   }
