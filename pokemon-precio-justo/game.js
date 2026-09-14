@@ -1,5 +1,5 @@
 const API_BASE = 'https://api.pokemontcg.io/v2/cards';
-const BATCH_SIZE = 250; // máximo que admite la API por página
+const BATCH_SIZE = 50; // cartas por lote: pageSize=250 provoca 500 en el backend con demasiada frecuencia
 const REFILL_THRESHOLD = 5; // cuando quedan pocas cartas en cola, se rellena en segundo plano
 
 const state = {
@@ -74,11 +74,35 @@ function startRound() {
   loadCard();
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// La API pública de pokemontcg.io no tiene SLA y da 500/timeout de vez en
+// cuando, más aún con páginas grandes. Reintenta con backoff antes de rendirse.
+async function fetchJSON(url, { retries = 2, timeoutMs = 8000 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (res.ok) return await res.json();
+      const body = await res.text().catch(() => '');
+      lastErr = new Error(`API respondió ${res.status}${body ? `: ${body.slice(0, 200)}` : ''}`);
+    } catch (err) {
+      lastErr = err.name === 'AbortError' ? new Error('Tiempo de espera agotado') : err;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (attempt < retries) await sleep(400 * 2 ** attempt);
+  }
+  throw lastErr;
+}
+
 async function getTotalCount() {
   if (state.totalCardCount) return state.totalCardCount;
-  const res = await fetch(`${API_BASE}?pageSize=1`);
-  if (!res.ok) throw new Error(`API respondió ${res.status}`);
-  const data = await res.json();
+  const data = await fetchJSON(`${API_BASE}?pageSize=1`);
   state.totalCardCount = data.totalCount;
   return state.totalCardCount;
 }
@@ -91,9 +115,14 @@ function shuffle(arr) {
   return arr;
 }
 
-// Pide un lote grande de cartas de golpe (en vez de 1 carta por ronda): las
-// páginas profundas de 1 en 1 son muy lentas en esta API, y con 250 cartas
-// de una vez suele bastar para toda la partida.
+function cardWithPrice(card) {
+  const price = card?.cardmarket?.prices?.trendPrice || card?.cardmarket?.prices?.averageSellPrice;
+  return price ? { card, price } : null;
+}
+
+// Pide un lote de cartas de golpe (en vez de 1 carta por ronda): las páginas
+// profundas de 1 en 1 son lentas, y con un puñado de lotes basta para toda
+// la partida.
 function fetchBatch() {
   if (prefetchPromise) return prefetchPromise; // ya hay una petición en curso: reutilizarla
   prefetchPromise = (async () => {
@@ -101,21 +130,31 @@ function fetchBatch() {
       const total = await getTotalCount();
       const maxPage = Math.max(1, Math.ceil(total / BATCH_SIZE));
       const page = 1 + Math.floor(Math.random() * maxPage);
-      const res = await fetch(`${API_BASE}?pageSize=${BATCH_SIZE}&page=${page}`);
-      if (!res.ok) throw new Error(`API respondió ${res.status}`);
-      const data = await res.json();
-      const cards = (data.data || [])
-        .map(card => {
-          const price = card?.cardmarket?.prices?.trendPrice || card?.cardmarket?.prices?.averageSellPrice;
-          return price ? { card, price } : null;
-        })
-        .filter(Boolean);
+      const data = await fetchJSON(`${API_BASE}?pageSize=${BATCH_SIZE}&page=${page}`);
+      const cards = (data.data || []).map(cardWithPrice).filter(Boolean);
       state.cardQueue.push(...shuffle(cards));
     } finally {
       prefetchPromise = null;
     }
   })();
   return prefetchPromise;
+}
+
+// Último recurso si el lote falla tras los reintentos: pide cartas sueltas
+// (petición mucho más pequeña, con más posibilidades de responder bien).
+async function fetchSingleCard() {
+  const total = await getTotalCount();
+  for (let i = 0; i < 3; i++) {
+    const page = 1 + Math.floor(Math.random() * total);
+    try {
+      const data = await fetchJSON(`${API_BASE}?pageSize=1&page=${page}`, { retries: 1 });
+      const result = cardWithPrice(data.data && data.data[0]);
+      if (result) return result;
+    } catch (err) {
+      // se prueba con otra página
+    }
+  }
+  return null;
 }
 
 function preloadImages(items) {
@@ -133,11 +172,20 @@ async function loadCard() {
   el('btn-reveal').disabled = true;
 
   try {
-    for (let attempt = 0; state.cardQueue.length === 0 && attempt < 3; attempt++) {
-      await fetchBatch();
+    let lastErr = null;
+    for (let attempt = 0; state.cardQueue.length === 0 && attempt < 2; attempt++) {
+      try {
+        await fetchBatch();
+      } catch (err) {
+        lastErr = err;
+      }
     }
     if (state.cardQueue.length === 0) {
-      throw new Error('No se encontraron cartas con precio');
+      const single = await fetchSingleCard().catch(err => { lastErr = err; return null; });
+      if (single) state.cardQueue.push(single);
+    }
+    if (state.cardQueue.length === 0) {
+      throw lastErr || new Error('No se encontraron cartas con precio');
     }
 
     const { card, price } = state.cardQueue.shift();

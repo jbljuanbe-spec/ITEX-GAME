@@ -13,8 +13,10 @@ Jugar: https://jbljuanbe-spec.github.io/ITEX-GAME/pokemon-precio-justo/
 ## Estructura
 `index.html`, `style.css`, `game.js`. Estático, sin dependencias ni backend — las peticiones a la API las hace el navegador del jugador directamente.
 
-## Rendimiento
-Pedir una carta por ronda (con `page` aleatorio y `pageSize=1`) era lento y a veces devolvía error 500 (un filtro `q=` sobre `cardmarket.prices` en un campo anidado no es fiable en esta API). Ahora se piden lotes de 250 cartas sin filtro de servidor, se filtran en el cliente las que tienen precio de Cardmarket, y se guardan en una cola local. La mayoría de partidas (5-15 rondas) se juegan enteras con un solo lote. Ver `LOGICA.md` para el detalle.
+## Rendimiento y fiabilidad
+Pedir una carta por ronda (con `page` aleatorio y `pageSize=1`) era lento. Ahora se piden lotes de 50 cartas sin filtro de servidor, se filtran en el cliente las que tienen precio de Cardmarket, y se guardan en una cola local; la mayoría de partidas (5-15 rondas) se juegan enteras con 1-2 lotes.
+
+La API de pokemontcg.io no tiene SLA y da error 500 o timeout de vez en cuando, sobre todo sin API key. Por eso cada petición reintenta con backoff (hasta 3 intentos) y, si el lote sigue fallando, cae a pedir una carta suelta antes de rendirse. Si el error 500 persiste siempre (no de forma intermitente), es la API la que está caída — revisar `LOGICA.md` y la consola del navegador para el detalle exacto (status/cuerpo de la respuesta).
 
 ## Notas
 - La API de pokemontcg.io no requiere clave para uso puntual (límite ~30 peticiones/min). Si se juega mucho, se puede añadir una API key gratuita como cabecera `X-Api-Key`.

@@ -11,12 +11,14 @@ Adivinar el precio de mercado (Cardmarket) de una carta Pokémon mostrada al aza
 - No toda carta tiene precio de Cardmarket (promos, cartas muy nuevas...), así que se descartan las que no lo tienen.
 
 ## Carga de cartas (rendimiento)
-Pedir 1 carta por ronda con página aleatoria era lento (paginación profunda) y un filtro de precio en el servidor (`q=...`) devolvía error 500. Solución actual:
-1. Al abrir la app (pantalla de configuración) y cada vez que la cola de cartas baja de `REFILL_THRESHOLD` (5), se pide en segundo plano un **lote de 250 cartas** de una página aleatoria, sin filtro de servidor.
+Pedir 1 carta por ronda con página aleatoria era lento (paginación profunda). Un filtro de precio en el servidor (`q=cardmarket.prices...`) también daba error 500 y se quitó. Solución actual:
+1. Al abrir la app (pantalla de configuración) y cada vez que la cola de cartas baja de `REFILL_THRESHOLD` (5), se pide en segundo plano un **lote de 50 cartas** (`BATCH_SIZE`) de una página aleatoria, sin filtro de servidor. (Se probó con lotes de 250 pero provocaban 500 con más frecuencia — 50 es un punto intermedio razonable.)
 2. Ese lote se filtra en el cliente (solo cartas con precio) y se mezcla (`shuffle`) en una cola local (`state.cardQueue`).
 3. Cada ronda simplemente saca la siguiente carta de la cola (`shift()`) — normalmente ya está en memoria, sin esperar red.
 4. Mientras se muestra una carta, se precargan (`new Image()`) las imágenes de las 2 siguientes de la cola, para que al pasar de ronda ya estén en caché del navegador.
-5. Con 5-15 rondas por partida, casi siempre basta un único lote de 250 para toda la partida.
+5. Con 5-15 rondas por partida, casi siempre bastan 1-2 lotes para toda la partida.
+
+**Reintentos:** la API de pokemontcg.io no tiene SLA y falla de forma intermitente (500, timeout). `fetchJSON` reintenta cada petición hasta 3 veces con backoff exponencial (400ms, 800ms) y aborta si tarda más de 8s. Si aun así el lote falla, `loadCard` cae a `fetchSingleCard` (pide 1 sola carta, petición más pequeña y con más probabilidad de responder) antes de mostrar el error final. Si el error persiste siempre y no de forma intermitente, es que la API está caída de verdad, no un bug del juego.
 
 Si algún día se quiere garantizar variedad entre partidas distintas, el lote se pide de una página aleatoria dentro del total de cartas, así que cambia entre partidas.
 
