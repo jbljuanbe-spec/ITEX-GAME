@@ -20,6 +20,11 @@ Pedir 1 carta por ronda con página aleatoria era lento (paginación profunda). 
 
 **Reintentos:** la API de pokemontcg.io no tiene SLA y falla de forma intermitente (500, timeout). `fetchJSON` reintenta cada petición hasta 3 veces con backoff exponencial (400ms, 800ms) y aborta si tarda más de 8s. Si aun así el lote falla, `loadCard` cae a `fetchSingleCard` (pide 1 sola carta, petición más pequeña y con más probabilidad de responder) antes de mostrar el error final. Si el error persiste siempre y no de forma intermitente, es que la API está caída de verdad, no un bug del juego.
 
+**Percepción de la espera:** mientras se carga (haya o no reintentos de por medio), en vez de un simple "Cargando...":
+- `#card-skeleton` muestra un bloque gris pulsante con el tamaño de una carta (`style.css`, animación `skeleton-pulse`), en vez de un hueco vacío o un icono de imagen rota.
+- `#card-meta` rota entre `LOADING_MESSAGES` cada 3s ("Buscando una carta al azar...", "Consultando el precio en Cardmarket...", "Casi lista...") para transmitir que el proceso avanza, no que se ha colgado.
+- La imagen no se muestra hasta que termina de descargarse (`waitForImage`, con `img.onload`/`onerror`), así no hay parpadeo de imagen a medio cargar.
+
 Si algún día se quiere garantizar variedad entre partidas distintas, el lote se pide de una página aleatoria dentro del total de cartas, así que cambia entre partidas.
 
 ## Flujo de pantallas

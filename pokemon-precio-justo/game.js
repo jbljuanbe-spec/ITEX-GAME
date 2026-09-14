@@ -164,12 +164,43 @@ function preloadImages(items) {
   });
 }
 
+const LOADING_MESSAGES = [
+  'Buscando una carta al azar...',
+  'Consultando el precio en Cardmarket...',
+  'Casi lista...',
+];
+
+// Rota mensajes mientras se espera, para que la carga se perciba como
+// progreso y no como que la app se ha quedado colgada.
+function startLoadingMessages(target) {
+  let i = 0;
+  target.textContent = LOADING_MESSAGES[0];
+  const timer = setInterval(() => {
+    i = (i + 1) % LOADING_MESSAGES.length;
+    target.textContent = LOADING_MESSAGES[i];
+  }, 3000);
+  return () => clearInterval(timer);
+}
+
+function waitForImage(img, src) {
+  return new Promise(resolve => {
+    img.onload = resolve;
+    img.onerror = resolve; // no bloquear el juego si la imagen falla al cargar
+    img.src = src;
+  });
+}
+
 async function loadCard() {
   errorBox.hidden = true;
-  el('card-image').src = '';
-  el('card-meta').textContent = 'Cargando carta...';
+  const img = el('card-image');
+  const skeleton = el('card-skeleton');
+  img.hidden = true;
+  img.src = '';
+  skeleton.hidden = false;
   el('guess-form').innerHTML = '';
   el('btn-reveal').disabled = true;
+
+  const stopMessages = startLoadingMessages(el('card-meta'));
 
   try {
     let lastErr = null;
@@ -192,8 +223,10 @@ async function loadCard() {
     state.currentCard = card;
     state.currentPrice = price;
 
-    el('card-image').src = card.images.large || card.images.small;
-    el('card-image').alt = card.name;
+    await waitForImage(img, card.images.large || card.images.small);
+    img.alt = card.name;
+    skeleton.hidden = true;
+    img.hidden = false;
     el('card-meta').textContent = `${card.name} — ${card.set.name} — ${card.rarity || 'Rareza desconocida'}`;
 
     renderGuessForm();
@@ -204,7 +237,10 @@ async function loadCard() {
       fetchBatch(); // en segundo plano, no bloquea la ronda actual
     }
   } catch (err) {
+    skeleton.hidden = true;
     showError('No se pudo cargar la carta. Comprueba tu conexión e inténtalo de nuevo. ' + err.message);
+  } finally {
+    stopMessages();
   }
 }
 
