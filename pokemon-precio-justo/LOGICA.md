@@ -42,8 +42,10 @@ Aparte, `#error-box` (fuera de las secciones) se muestra si falla la carga de un
 ## Estado del juego (`state` en `game.js`)
 ```
 state = {
-  players: [{ name, score }],   // uno por jugador
-  totalRounds,                  // 5 / 10 / 15
+  numPlayers,                   // elegido en el selector de la pantalla de configuración
+  numRounds,                    // idem, antes de empezar la partida
+  players: [{ name, score }],   // uno por jugador, fijado al pulsar "Empezar partida"
+  totalRounds,                  // = numRounds en el momento de empezar
   currentRound,                 // ronda actual (1-indexed)
   totalCardCount,               // total de cartas en la API (se cachea una vez)
   currentCard,                  // objeto carta de la API mostrado ahora mismo
@@ -72,11 +74,21 @@ puntos = max(0, round(100 - error%))
 
 Es una puntuación absoluta (no relativa a los rivales), así que funciona igual con 1 o con 4 jugadores. En pantalla se resalta (`.winner`) a quien más puntos saca esa ronda, pero no le quita puntos a nadie. Al final se suman los puntos de todas las rondas y se ordena el ranking.
 
-## Piezas visuales actuales (para rediseñar)
-Todo el HTML se genera o ya existe en `index.html`; `game.js` solo rellena texto/atributos, no crea estructura nueva salvo:
-- `#player-names`: un `<label>+<input>` por jugador (dinámico según el selector de jugadores).
-- `#guess-form`: un `.guess-row` (label + input numérico) por jugador, cada ronda.
-- `#reveal-area`: línea de precio real + una `.result-row` por jugador (con clase `.winner` si es el ganador de la ronda).
-- `#final-ranking`: una `.result-row` por jugador, ordenadas por puntuación.
+## Diseño visual
+Sistema de tokens en `style.css` (mismo patrón que Hazte con Todos): variables de color en `:root` (`--fondo`, `--panel`, `--tinta`, `--suave`, `--rojo`, `--oro`, `--verde`, `--azul`, `--radio`, `--sombra`), redefinidas bajo `prefers-color-scheme: dark` y bajo `:root[data-tema="oscuro"]` para el toggle manual. Cambiar la paleta es solo tocar esas variables, no hay colores sueltos por el CSS.
 
-Los estilos están en `style.css`, con variables de color al principio (`--rojo`, `--amarillo`, `--azul`) fáciles de sustituir por una paleta nueva.
+Tipografías (Google Fonts, cargadas en `index.html`, con fallback a fuentes del sistema si no cargan):
+- `--f-display` (Pixelify Sans): títulos, botones, cifras grandes.
+- `--f-cuerpo` (Space Grotesk): texto normal.
+- `--f-mini` (Silkscreen): etiquetas pequeñas en mayúsculas (`.field-label`, `.badge`).
+
+`game.js` genera estructura dinámica en:
+- `#player-names`: una `.player-name-row` (avatar circular con el número + input) por jugador.
+- `#guess-form`: una `.guess-row` (label + `.input-euro` con el símbolo € superpuesto) por jugador, cada ronda.
+- `#scoreboard`: un `.score-chip` por jugador con su puntuación total, actualizado al empezar cada ronda y al revelar; el/los que van primero llevan la clase `.leader`.
+- `#reveal-area`: precio real destacado (`.real-price .amount`, en dorado) + una `.result-row` por jugador (`.winner` si ganó la ronda).
+- `#final-ranking`: igual que `#reveal-area` pero con `.rank` (#1, #2...) delante del nombre.
+
+El número de jugadores y de rondas ya no son `<select>`: son controles segmentados (`.segmented` + `.segmented-option[aria-pressed]`) en `#players-picker` y `#rounds-picker`, con el valor elegido en `state.numPlayers` / `state.numRounds`.
+
+Toggle de tema: botón `#btn-theme` alterna `data-tema="claro"/"oscuro"` en `<html>` y lo guarda en `localStorage` (clave `ppj-tema`); sin elección manual, sigue el tema del sistema.

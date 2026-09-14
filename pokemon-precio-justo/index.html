@@ -4,65 +4,79 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Precio Justo Pokémon</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Space+Grotesk:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Precio Justo Pokémon</h1>
-    <p class="subtitle">Adivina el precio de mercado de Cardmarket</p>
+  <header class="topbar">
+    <button id="btn-theme" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">◐</button>
+    <div class="brand">
+      <h1>Precio Justo <span>Pokémon</span></h1>
+      <p class="subtitle">Adivina el precio de mercado de Cardmarket</p>
+    </div>
   </header>
 
   <main>
-    <section id="screen-setup">
+    <section id="screen-setup" class="panel">
       <h2>Nueva partida</h2>
 
-      <label for="num-players">Jugadores</label>
-      <select id="num-players">
-        <option value="1">1 (solitario)</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4" selected>4</option>
-      </select>
-
-      <div id="player-names"></div>
-
-      <label for="num-rounds">Rondas</label>
-      <select id="num-rounds">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-      </select>
-
-      <button id="btn-start">Empezar partida</button>
-    </section>
-
-    <section id="screen-round" hidden>
-      <p id="round-info"></p>
-
-      <div id="card-area">
-        <div id="card-skeleton" class="skeleton" hidden></div>
-        <img id="card-image" alt="Carta Pokémon" hidden>
-        <div id="card-meta"></div>
+      <div class="field">
+        <span class="field-label">Jugadores</span>
+        <div id="players-picker" class="segmented" role="group" aria-label="Número de jugadores">
+          <button type="button" class="segmented-option" data-value="1">1</button>
+          <button type="button" class="segmented-option" data-value="2">2</button>
+          <button type="button" class="segmented-option" data-value="3">3</button>
+          <button type="button" class="segmented-option" data-value="4">4</button>
+        </div>
       </div>
 
-      <div id="guess-form"></div>
+      <div id="player-names" class="player-names"></div>
 
-      <button id="btn-reveal">Revelar precio</button>
+      <div class="field">
+        <span class="field-label">Rondas</span>
+        <div id="rounds-picker" class="segmented" role="group" aria-label="Número de rondas">
+          <button type="button" class="segmented-option" data-value="5">5</button>
+          <button type="button" class="segmented-option" data-value="10">10</button>
+          <button type="button" class="segmented-option" data-value="15">15</button>
+        </div>
+      </div>
 
-      <div id="reveal-area" hidden></div>
-
-      <button id="btn-next" hidden>Siguiente carta</button>
+      <button id="btn-start" class="btn-cta">Empezar partida</button>
     </section>
 
-    <section id="screen-final" hidden>
+    <section id="screen-round" class="panel" hidden>
+      <div class="round-header">
+        <span id="round-badge" class="badge"></span>
+        <div id="scoreboard" class="scoreboard"></div>
+      </div>
+
+      <div id="card-area" class="card-area">
+        <div id="card-skeleton" class="skeleton" hidden></div>
+        <img id="card-image" alt="Carta Pokémon" hidden>
+        <div id="card-meta" class="card-meta"></div>
+      </div>
+
+      <div id="guess-form" class="guess-form"></div>
+
+      <button id="btn-reveal" class="btn-cta">Revelar precio</button>
+
+      <div id="reveal-area" class="reveal-area" hidden></div>
+
+      <button id="btn-next" class="btn-cta" hidden>Siguiente carta</button>
+    </section>
+
+    <section id="screen-final" class="panel" hidden>
       <h2>Resultado final</h2>
-      <div id="final-ranking"></div>
-      <button id="btn-restart">Jugar de nuevo</button>
+      <div id="final-ranking" class="ranking"></div>
+      <button id="btn-restart" class="btn-cta">Jugar de nuevo</button>
     </section>
 
-    <div id="error-box" hidden>
+    <div id="error-box" class="error-box" hidden>
       <p id="error-msg"></p>
-      <button id="btn-retry">Reintentar</button>
+      <button id="btn-retry" class="btn-secondary">Reintentar</button>
     </div>
   </main>
 

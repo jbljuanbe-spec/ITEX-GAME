@@ -3,6 +3,8 @@ const BATCH_SIZE = 50; // cartas por lote: pageSize=250 provoca 500 en el backen
 const REFILL_THRESHOLD = 5; // cuando quedan pocas cartas en cola, se rellena en segundo plano
 
 const state = {
+  numPlayers: 4,
+  numRounds: 10,
   players: [],
   totalRounds: 10,
   currentRound: 0,
@@ -21,41 +23,107 @@ const screenRound = el('screen-round');
 const screenFinal = el('screen-final');
 const errorBox = el('error-box');
 
-el('num-players').addEventListener('change', renderPlayerNameInputs);
+function wireSegmented(containerId, defaultValue, onSelect) {
+  const buttons = [...el(containerId).querySelectorAll('.segmented-option')];
+  buttons.forEach(btn => {
+    btn.setAttribute('aria-pressed', String(Number(btn.dataset.value) === defaultValue));
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      onSelect(Number(btn.dataset.value));
+    });
+  });
+}
+
+wireSegmented('players-picker', state.numPlayers, (value) => {
+  state.numPlayers = value;
+  renderPlayerNameInputs();
+});
+wireSegmented('rounds-picker', state.numRounds, (value) => {
+  state.numRounds = value;
+});
+
+el('btn-theme').addEventListener('click', toggleTheme);
 el('btn-start').addEventListener('click', startGame);
 el('btn-reveal').addEventListener('click', reveal);
 el('btn-next').addEventListener('click', goToNextRound);
 el('btn-restart').addEventListener('click', restart);
 el('btn-retry').addEventListener('click', loadCard);
 
+initTheme();
 renderPlayerNameInputs();
 fetchBatch(); // precarga en segundo plano mientras el jugador rellena la configuración
 
+const THEME_KEY = 'ppj-tema';
+
+function initTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) document.documentElement.setAttribute('data-tema', saved);
+  } catch (err) {
+    // almacenamiento no disponible (modo privado, etc.): se queda con el tema del sistema
+  }
+}
+
+function toggleTheme() {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const current = document.documentElement.getAttribute('data-tema') || (prefersDark ? 'oscuro' : 'claro');
+  const next = current === 'oscuro' ? 'claro' : 'oscuro';
+  document.documentElement.setAttribute('data-tema', next);
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (err) {
+    // sin persistencia si el almacenamiento no está disponible
+  }
+}
+
 function renderPlayerNameInputs() {
-  const n = Number(el('num-players').value);
   const container = el('player-names');
   container.innerHTML = '';
-  for (let i = 1; i <= n; i++) {
-    const label = document.createElement('label');
-    label.textContent = `Nombre jugador ${i}`;
+  for (let i = 1; i <= state.numPlayers; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-name-row';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'player-avatar';
+    avatar.textContent = String(i);
+
     const input = document.createElement('input');
     input.type = 'text';
     input.id = `player-name-${i}`;
     input.placeholder = `Jugador ${i}`;
-    label.appendChild(input);
-    container.appendChild(label);
+
+    row.appendChild(avatar);
+    row.appendChild(input);
+    container.appendChild(row);
   }
 }
 
+function renderScoreboard() {
+  const board = el('scoreboard');
+  board.innerHTML = '';
+  const maxScore = Math.max(0, ...state.players.map(p => p.score));
+  state.players.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'score-chip' + (maxScore > 0 && p.score === maxScore ? ' leader' : '');
+    const name = document.createElement('span');
+    name.textContent = p.name;
+    const score = document.createElement('b');
+    score.textContent = String(p.score);
+    chip.appendChild(name);
+    chip.appendChild(score);
+    board.appendChild(chip);
+  });
+}
+
 function startGame() {
-  const n = Number(el('num-players').value);
   state.players = [];
-  for (let i = 1; i <= n; i++) {
+  for (let i = 1; i <= state.numPlayers; i++) {
     const input = el(`player-name-${i}`);
     const name = input.value.trim() || `Jugador ${i}`;
     state.players.push({ name, score: 0 });
   }
-  state.totalRounds = Number(el('num-rounds').value);
+  state.totalRounds = state.numRounds;
   state.currentRound = 1;
 
   screenSetup.hidden = true;
@@ -66,11 +134,12 @@ function startGame() {
 }
 
 function startRound() {
-  el('round-info').textContent = `Ronda ${state.currentRound} / ${state.totalRounds}`;
+  el('round-badge').textContent = `Ronda ${state.currentRound} / ${state.totalRounds}`;
   el('btn-reveal').hidden = false;
   el('btn-next').hidden = true;
   el('reveal-area').hidden = true;
   el('reveal-area').innerHTML = '';
+  renderScoreboard();
   loadCard();
 }
 
@@ -254,15 +323,19 @@ function renderGuessForm() {
     const label = document.createElement('label');
     label.textContent = player.name;
 
+    const wrap = document.createElement('div');
+    wrap.className = 'input-euro';
+
     const input = document.createElement('input');
     input.type = 'number';
     input.id = `guess-${i}`;
     input.min = '0';
     input.step = '0.01';
-    input.placeholder = '€';
+    input.placeholder = '0.00';
 
+    wrap.appendChild(input);
     row.appendChild(label);
-    row.appendChild(input);
+    row.appendChild(wrap);
     form.appendChild(row);
   });
 }
@@ -288,21 +361,38 @@ function reveal() {
   const area = el('reveal-area');
   area.innerHTML = '';
 
-  const priceLine = document.createElement('div');
-  priceLine.className = 'real-price';
-  priceLine.textContent = `Precio real (Cardmarket): ${real.toFixed(2)} €`;
-  area.appendChild(priceLine);
+  const priceBlock = document.createElement('div');
+  priceBlock.className = 'real-price';
+  const priceLabel = document.createElement('span');
+  priceLabel.className = 'label';
+  priceLabel.textContent = 'Precio real (Cardmarket)';
+  const priceAmount = document.createElement('span');
+  priceAmount.className = 'amount';
+  priceAmount.textContent = `${real.toFixed(2)} €`;
+  priceBlock.appendChild(priceLabel);
+  priceBlock.appendChild(priceAmount);
+  area.appendChild(priceBlock);
 
   results.forEach(r => {
     const row = document.createElement('div');
     row.className = 'result-row' + (r.points === maxPoints ? ' winner' : '');
-    row.textContent = `${r.name}: ${r.guess.toFixed(2)} € → ${r.points} pts`;
+
+    const name = document.createElement('span');
+    name.textContent = `${r.name}: ${r.guess.toFixed(2)} €`;
+
+    const points = document.createElement('span');
+    points.className = 'points';
+    points.textContent = `${r.points} pts`;
+
+    row.appendChild(name);
+    row.appendChild(points);
     area.appendChild(row);
   });
 
   area.hidden = false;
   el('btn-reveal').hidden = true;
   el('btn-next').hidden = false;
+  renderScoreboard();
 }
 
 function goToNextRound() {
@@ -324,7 +414,20 @@ function showFinal() {
   ranking.forEach((player, i) => {
     const row = document.createElement('div');
     row.className = 'result-row';
-    row.textContent = `${i + 1}. ${player.name} — ${player.score} pts`;
+
+    const name = document.createElement('span');
+    const rank = document.createElement('span');
+    rank.className = 'rank';
+    rank.textContent = `#${i + 1}`;
+    name.appendChild(rank);
+    name.appendChild(document.createTextNode(player.name));
+
+    const points = document.createElement('span');
+    points.className = 'points';
+    points.textContent = `${player.score} pts`;
+
+    row.appendChild(name);
+    row.appendChild(points);
     container.appendChild(row);
   });
 }
