@@ -20,7 +20,16 @@
   </header>
 
   <main>
-    <section id="screen-setup" class="panel">
+    <section id="screen-modo" class="panel">
+      <h2>¿Cómo jugáis?</h2>
+      <button id="btn-modo-local" class="btn-cta">Mismo dispositivo</button>
+      <p class="modo-desc">Os pasáis el móvil o el portátil por turnos de ronda.</p>
+      <button id="btn-modo-online" class="btn-secondary">Sala online con amigos</button>
+      <p class="modo-desc">Cada uno desde su móvil, todos adivináis a la vez.</p>
+    </section>
+
+    <section id="screen-setup" class="panel" hidden>
+      <button type="button" id="btn-setup-volver" class="btn-volver">← Cambiar modo</button>
       <h2>Nueva partida</h2>
 
       <div class="field">
@@ -78,6 +87,81 @@
       <p id="error-msg"></p>
       <button id="btn-retry" class="btn-secondary">Reintentar</button>
     </div>
+
+    <!-- Sala online: pantallas independientes de las del modo mismo dispositivo -->
+    <section id="screen-online-setup" class="panel" hidden>
+      <button type="button" id="btn-online-volver" class="btn-volver">← Cambiar modo</button>
+      <h2>Sala online</h2>
+
+      <div class="field">
+        <span class="field-label">Tu nombre</span>
+        <input type="text" id="online-nombre" placeholder="Tu nombre">
+      </div>
+
+      <button id="btn-crear-sala" class="btn-cta">Crear sala nueva</button>
+
+      <div class="separador"><span>o</span></div>
+
+      <div class="field">
+        <span class="field-label">Código de sala</span>
+        <input type="text" id="online-codigo" class="codigo-input" placeholder="ABCD" maxlength="4" autocapitalize="characters">
+      </div>
+      <button id="btn-unirse-sala" class="btn-secondary">Unirse a una sala</button>
+    </section>
+
+    <section id="screen-lobby" class="panel" hidden>
+      <p class="field-label">Código de sala</p>
+      <p id="lobby-codigo" class="codigo-sala"></p>
+
+      <div id="lobby-jugadores" class="lobby-jugadores"></div>
+
+      <div id="lobby-config-host" hidden>
+        <div class="field">
+          <span class="field-label">Rondas</span>
+          <div id="lobby-rondas-picker" class="segmented" role="group" aria-label="Número de rondas">
+            <button type="button" class="segmented-option" data-value="5">5</button>
+            <button type="button" class="segmented-option" data-value="10">10</button>
+            <button type="button" class="segmented-option" data-value="15">15</button>
+          </div>
+        </div>
+        <button id="btn-lobby-empezar" class="btn-cta">Empezar partida</button>
+      </div>
+      <p id="lobby-espera-msg" class="modo-desc" hidden>Esperando a que el anfitrión empiece la partida…</p>
+    </section>
+
+    <section id="screen-online-round" class="panel" hidden>
+      <div class="round-header">
+        <span id="online-round-badge" class="badge"></span>
+        <div id="online-scoreboard" class="scoreboard"></div>
+      </div>
+
+      <div id="online-card-area" class="card-area">
+        <div id="online-card-skeleton" class="skeleton" hidden></div>
+        <img id="online-card-image" alt="Carta Pokémon" hidden>
+        <div id="online-card-meta" class="card-meta"></div>
+      </div>
+
+      <div id="online-guess-form" class="guess-form"></div>
+      <p id="online-espera-respuestas" class="modo-desc" hidden></p>
+
+      <button id="btn-online-enviar" class="btn-cta">Enviar estimación</button>
+
+      <div id="online-reveal-area" class="reveal-area" hidden></div>
+
+      <button id="btn-online-siguiente" class="btn-cta" hidden>Siguiente carta</button>
+      <p id="online-espera-siguiente" class="modo-desc" hidden>Esperando a que el anfitrión pase de ronda…</p>
+    </section>
+
+    <section id="screen-online-final" class="panel" hidden>
+      <h2>Resultado final</h2>
+      <div id="online-final-ranking" class="ranking"></div>
+      <button id="btn-online-restart" class="btn-cta">Volver al inicio</button>
+    </section>
+
+    <div id="online-error-box" class="error-box" hidden>
+      <p id="online-error-msg"></p>
+      <button id="btn-online-retry" class="btn-secondary">Volver a intentar</button>
+    </div>
   </main>
 
   <footer>
@@ -85,5 +169,6 @@
   </footer>
 
   <script src="game.js"></script>
+  <script src="sala.js"></script>
 </body>
 </html>

@@ -424,3 +424,80 @@ footer {
   padding: 8px 14px 24px;
 }
 footer a { color: var(--suave); }
+
+/* ── Selector de modo y sala online ───────────────────────────────── */
+.modo-desc {
+  margin: 6px 0 0;
+  font-size: .8rem;
+  color: var(--suave);
+  text-align: center;
+}
+.modo-desc:last-of-type { margin-bottom: 4px; }
+
+.btn-volver {
+  background: none;
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--suave);
+}
+.btn-volver:hover { color: var(--tinta); }
+
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+  color: var(--suave);
+  font-size: .8rem;
+}
+.separador::before, .separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--linea);
+}
+
+.codigo-input {
+  text-align: center;
+  font-family: var(--f-mini);
+  font-size: 1.3rem;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+.codigo-sala {
+  text-align: center;
+  font-family: var(--f-mini);
+  font-size: 2rem;
+  letter-spacing: 8px;
+  color: var(--azul);
+  margin: 4px 0 18px;
+}
+
+.lobby-jugadores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.lobby-jugador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--panel2);
+  border: 1.5px solid var(--linea);
+  font-size: .92rem;
+}
+.punto-estado {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--verde);
+  flex: 0 0 auto;
+}
+.lobby-jugador.desconectado { opacity: .55; }
+.lobby-jugador.desconectado .punto-estado { background: var(--suave); }

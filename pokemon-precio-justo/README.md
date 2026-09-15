@@ -1,6 +1,8 @@
 # Precio Justo Pokémon
 
-Adivina el precio de mercado de Cardmarket de una carta Pokémon al azar. 1 a 4 jugadores en el mismo dispositivo (hotseat), por rondas.
+Adivina el precio de mercado de Cardmarket de una carta Pokémon al azar, por rondas. Dos modos:
+- **Mismo dispositivo**: 1 a 4 jugadores pasándose el móvil/portátil (hotseat).
+- **Sala online**: cada jugador desde su propio dispositivo, con un código de sala, adivinando todos a la vez.
 
 Jugar: https://jbljuanbe-spec.github.io/ITEX-GAME/pokemon-precio-justo/
 
@@ -11,7 +13,9 @@ Jugar: https://jbljuanbe-spec.github.io/ITEX-GAME/pokemon-precio-justo/
 - Tras el número de rondas elegido, gana quien más puntos acumule.
 
 ## Estructura
-`index.html`, `style.css`, `game.js`. Estático, sin dependencias ni backend — las peticiones a la API las hace el navegador del jugador directamente.
+`index.html`, `style.css`, `game.js` (modo mismo dispositivo), `sala.js` (modo sala online). Sitio estático sin dependencias — el modo local pide las cartas directamente desde el navegador del jugador.
+
+El modo sala online necesita un pequeño backend (Cloudflare Worker + Durable Objects) para poder sincronizar a los jugadores en tiempo real — está en `worker/`, con sus propias instrucciones de despliegue en `worker/README.md`. Sin desplegarlo, el modo mismo dispositivo funciona igual que siempre; solo el botón de sala online avisa de que falta configurar el servidor.
 
 ## Rendimiento y fiabilidad
 Pedir una carta por ronda (con `page` aleatorio y `pageSize=1`) era lento. Ahora se piden lotes de 50 cartas sin filtro de servidor, se filtran en el cliente las que tienen precio de Cardmarket, y se guardan en una cola local; la mayoría de partidas (5-15 rondas) se juegan enteras con 1-2 lotes.
