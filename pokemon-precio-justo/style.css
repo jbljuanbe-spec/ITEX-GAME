@@ -280,7 +280,21 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: var(--azul)
 }
 .score-chip b { font-family: var(--f-display); }
 
-.card-area { text-align: center; }
+.card-area {
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.card-area img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(62vh, 520px);
+  object-fit: contain;
+  margin: 0 auto;
+}
 
 .card-meta {
   margin-top: 10px;
@@ -290,8 +304,6 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: var(--azul)
 }
 
 #card-image {
-  max-width: 100%;
-  max-height: 340px;
   border-radius: 12px;
   box-shadow: 0 10px 26px rgba(24, 27, 41, .22);
 }
